@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#173b78">
+<title>Bitácora Servicios</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fb;color:#182238;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#173b78;color:white;padding:20px 18px 18px;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:22px;font-weight:900}
+header p{margin:5px 0 0;opacity:.85;font-size:13px}
+main{max-width:650px;margin:auto;padding:14px 14px 100px}
+.card{background:white;border:1px solid #dce4ef;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #173b7808}
+h2{margin:0 0 8px;font-size:22px}
+h3{margin:18px 0 10px;font-size:15px;color:#53627a}
+.notice{background:#eef5ff;border:1px solid #cfe0f8;border-radius:14px;padding:12px;color:#284d83;font-size:13px;line-height:1.4}
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.action{border:0;border-radius:18px;padding:24px 12px;font-size:18px;font-weight:900;color:white;box-shadow:0 4px 10px #00000012}
+.entry{background:#173b78}.exit{background:#159447}
+.action span{display:block;font-size:32px;margin-bottom:6px}
+.recent{margin-top:14px}
+.record{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid #e7edf5}
+.record:last-child{border-bottom:0}
+.record b{display:block;font-size:14px}
+.record small{display:block;color:#69778c;margin-top:4px}
+.pill{display:inline-block;border-radius:999px;padding:4px 8px;font-size:10px;font-weight:900;background:#edf2f8;color:#53627a}
+.pill.special{background:#eee7ff;color:#5935a4}
+.record button{border:0;background:#edf2f8;color:#173b78;border-radius:10px;padding:9px;font-weight:800}
+.bottom{position:fixed;left:0;right:0;bottom:0;background:white;border-top:1px solid #dce4ef;padding:9px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;z-index:20}
+.bottom button,.btn{border:0;border-radius:12px;padding:12px;font-weight:900;background:#e9eff7;color:#173b78}
+.bottom .primary,.btn.primary{background:#173b78;color:white}
+.empty{color:#75839a;text-align:center;padding:18px 5px}
+.screen{display:none}.screen.active{display:block}
+.list{display:grid;gap:9px}
+.service{width:100%;text-align:left;background:white;border:1px solid #d7e1ee;border-radius:15px;padding:14px}
+.service b{display:block;font-size:15px;color:#17233a}
+.service small{display:block;color:#6d7b90;margin-top:5px}
+.service.special{border-color:#bca8ef;background:#fbf9ff}
+.back{background:transparent;border:0;color:#173b78;font-weight:900;padding:4px 0 12px;font-size:15px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#f5f8fc;border-radius:14px;text-align:center;padding:12px 5px}
+.stat b{display:block;font-size:22px}.stat span{font-size:10px;color:#66758b}
+.field label{display:block;font-size:12px;color:#68768a;margin-bottom:5px}
+.field input,.field select{width:100%;padding:12px;border:1px solid #cfd9e6;border-radius:11px;background:white;font-size:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{width:100%;margin-top:9px}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:30;align-items:flex-end}
+.modal.show{display:flex}
+.sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow:auto;padding:18px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sheet-head h2{margin:0}
+.close{border:0;background:#edf2f8;border-radius:10px;padding:9px 12px;font-weight:800}
+.search{margin-bottom:10px}
+@media(max-width:480px){.action-grid{grid-template-columns:1fr 1fr}.action{padding:20px 8px;font-size:16px}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BITÁCORA SERVICIOS</h1>
+  <p id="today"></p>
+</header>
+
+<main>
+  <!-- INICIO -->
+  <section id="home" class="screen active">
+    <div class="card">
+      <h2>Registrar servicio</h2>
+      <div class="notice"><b>Solo toque lo que realizó.</b><br>La aplicación coloca automáticamente la fecha y la hora.</div>
+
+      <div class="action-grid">
+        <button class="action entry" onclick="openPicker('ENTRADA')">
+          <span>↓</span>ENTRADA
+        </button>
+        <button class="action exit" onclick="openPicker('SALIDA')">
+          <span>↑</span>SALIDA
+        </button>
+      </div>
+    </div>
+
+    <div class="card recent">
+      <h2>Últimos registros</h2>
+      <div id="recent"></div>
+    </div>
+
+    <div class="card">
+      <div class="stats" id="homeStats"></div>
+    </div>
+  </section>
+
+  <!-- REGISTROS -->
+  <section id="records" class="screen">
+    <div class="card">
+      <button class="back" onclick="show('home')">← Volver</button>
+      <h2>Registros</h2>
+      <div class="field">
+        <label>Buscar</label>
+        <input id="search" placeholder="Servicio, fecha, origen o destino" oninput="renderRecords()">
+      </div>
+    </div>
+    <div class="card">
+      <div id="recordList"></div>
+    </div>
+  </section>
+
+  <!-- CIERRE -->
+  <section id="closing" class="screen">
+    <div class="card">
+      <button class="back" onclick="show('home')">← Volver</button>
+      <h2>Cierre mensual</h2>
+      <div class="row">
+        <div class="field"><label>Mes</label><select id="month" onchange="renderClosing()"></select></div>
+        <div class="field"><label>Año</label><input id="year" type="number" onchange="renderClosing()"></div>
+      </div>
+    </div>
+    <div class="card"><div class="stats" id="closingStats"></div></div>
+    <div class="card">
+      <h3>Servicios CANCINO</h3>
+      <div id="cancinoList"></div>
+    </div>
+  </section>
+
+  <!-- MÁS -->
+  <section id="more" class="screen">
+    <div class="card">
+      <button class="back" onclick="show('home')">← Volver</button>
+      <h2>Herramientas</h2>
+      <button class="btn primary full" onclick="exportGeneral()">⬇ Exportar servicios generales</button>
+      <button class="btn full" onclick="exportCancino()">⬇ Exportar servicios CANCINO</button>
+      <button class="btn full" onclick="window.print()">🖨 Imprimir / PDF</button>
+      <button class="btn full" onclick="backup()">💾 Crear respaldo</button>
+      <label class="btn full" style="display:block;text-align:center;cursor:pointer">
+        ♻ Restaurar respaldo
+        <input type="file" accept=".json" onchange="restore(event)" style="display:none">
+      </label>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom">
+  <button class="primary" onclick="show('home')">Registrar</button>
+  <button onclick="show('records');renderRecords()">Registros</button>
+  <button onclick="show('more')">Más</button>
+</nav>
+
+<!-- SELECTOR DE SERVICIO -->
+<div id="picker" class="modal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="pickerTitle">Seleccione</h2>
+      <button class="close" onclick="closePicker()">Cerrar</button>
+    </div>
+    <input id="pickerSearch" class="field search" placeholder="Buscar servicio..." oninput="renderPicker()">
+    <div id="pickerList" class="list"></div>
+  </div>
+</div>
+
+<!-- EDICIÓN -->
+<div id="editModal" class="modal">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Editar registro</h2>
+      <button class="close" onclick="closeEdit()">Cerrar</button>
+    </div>
+    <div class="row">
+      <div class="field"><label>Fecha</label><input id="edate" type="date"></div>
+      <div class="field"><label>Hora</label><input id="etime" placeholder="08:44 AM"></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label>Servicio</label><select id="eservice"></select></div>
+    <div class="field" style="margin-top:10px"><label>Observación</label><input id="eobs"></div>
+    <button class="btn primary full" onclick="saveEdit()">Guardar cambios</button>
+    <button class="btn full" style="color:#c62828" onclick="removeEdit()">Eliminar registro</button>
+  </div>
+</div>
+
+<script>
+const CATALOG=[
+{"label":"ENTRADA BOCA CHICA → ROCKWELL","type":"ENTRADA","origin":"BOCA CHICA","dest":"ROCKWELL","special":false,"historical_count":38},
+{"label":"ENTRADA CANCINO → ROCKWELL","type":"ENTRADA","origin":"CANCINO","dest":"ROCKWELL","special":true,"historical_count":25},
+{"label":"ENTRADA LABRADOR → ROCKWELL","type":"ENTRADA","origin":"LABRADOR","dest":"ROCKWELL","special":false,"historical_count":1},
+{"label":"SALIDA ROCKWELL → BACKUP","type":"SALIDA","origin":"ROCKWELL","dest":"BACKUP","special":false,"historical_count":3},
+{"label":"SALIDA ROCKWELL → BOCA CHICA","type":"SALIDA","origin":"ROCKWELL","dest":"BOCA CHICA","special":false,"historical_count":33},
+{"label":"SALIDA ROCKWELL → CANCINO","type":"SALIDA","origin":"ROCKWELL","dest":"CANCINO","special":true,"historical_count":25},
+{"label":"SALIDA ROCKWELL → JUAN BOSH-SAN VICENT","type":"SALIDA","origin":"ROCKWELL","dest":"JUAN BOSH-SAN VICENT","special":false,"historical_count":1},
+{"label":"SALIDA ROCKWELL","type":"SALIDA","origin":"ROCKWELL","dest":"ROCKWELL","special":false,"historical_count":1},
+{"label":"SALIDA ROCKWELL → SAN VICENTE","type":"SALIDA","origin":"ROCKWELL","dest":"SAN VICENTE","special":false,"historical_count":1}
+];
+
+const KEY='BITACORA_SERVICIOS_V5';
+let trips=[],editId=null,pickerType='ENTRADA';
+
+try{
+  const raw=localStorage.getItem(KEY);
+  trips=raw?JSON.parse(raw):[];
+  if(!Array.isArray(trips))trips=[];
+}catch(e){trips=[]}
+
+function save(){try{localStorage.setItem(KEY,JSON.stringify(trips))}catch(e){alert('No se pudo guardar en este dispositivo.')}}
+
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function now(){
+  const d=new Date();
+  return {
+    date:d.toISOString().slice(0,10),
+    time:d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit',hour12:true})
+  }
+}
+function fmt(d){const p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d}
+function show(id){
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  if(id==='home')renderHome();
+  if(id==='records')renderRecords();
+  if(id==='closing')renderClosing();
+}
+function openPicker(type){
+  pickerType=type;
+  document.getElementById('pickerTitle').textContent=type==='ENTRADA'?'¿Qué entrada realizó?':'¿Qué salida realizó?';
+  document.getElementById('pickerSearch').value='';
+  renderPicker();
+  document.getElementById('picker').classList.add('show');
+}
+function closePicker(){document.getElementById('picker').classList.remove('show')}
+function renderPicker(){
+  const q=document.getElementById('pickerSearch').value.toLowerCase();
+  const arr=CATALOG.filter(s=>s.type===pickerType && s.label.toLowerCase().includes(q));
+  document.getElementById('pickerList').innerHTML=arr.map(s=>{
+    const i=CATALOG.indexOf(s);
+    return `<button class="service ${s.special?'special':''}" onclick="stamp(${i})">
+      <b>${esc(s.label)}</b>
+      <small>${esc(s.origin)} → ${esc(s.dest)}${s.special?' · CANCINO':''}</small>
+    </button>`;
+  }).join('') || '<div class="empty">No hay servicios que coincidan.</div>';
+}
+function stamp(i){
+  const s=CATALOG[i],n=now();
+  trips.push({id:'T'+Date.now()+Math.random().toString(16).slice(2),date:n.date,time:n.time,service:s.label,type:s.type,origin:s.origin,dest:s.dest,special:s.special,obs:''});
+  save();
+  closePicker();
+  renderHome();
+  show('home');
+}
+function renderHome(){
+  document.getElementById('today').textContent='Hoy: '+new Date().toLocaleDateString('es-DO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const recent=trips.slice().sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time)).slice(0,5);
+  document.getElementById('recent').innerHTML=recent.map(t=>`
+    <div class="record">
+      <div>
+        <b>${t.type==='ENTRADA'?'↓':'↑'} ${esc(t.service)}</b>
+        <small>${fmt(t.date)} · ${esc(t.time)} · <span class="pill ${t.special?'special':''}">${t.special?'CANCINO':'GENERAL'}</span></small>
+      </div>
+      <button onclick="edit('${t.id}')">Editar</button>
+    </div>`).join('') || '<div class="empty">Todavía no hay registros.</div>';
+
+  const en=trips.filter(t=>t.type==='ENTRADA').length;
+  const sa=trips.filter(t=>t.type==='SALIDA').length;
+  const ca=trips.filter(t=>t.special).length;
+  document.getElementById('homeStats').innerHTML=
+    `<div class="stat"><span>TOTAL</span><b>${trips.length}</b></div>
+     <div class="stat"><span>ENTRADAS</span><b>${en}</b></div>
+     <div class="stat"><span>SALIDAS</span><b>${sa}</b></div>`;
+}
+function renderRecords(){
+  const q=(document.getElementById('search')?.value||'').toLowerCase();
+  const arr=trips.filter(t=>JSON.stringify(t).toLowerCase().includes(q)).slice().reverse();
+  document.getElementById('recordList').innerHTML=arr.map(t=>`
+    <div class="record">
+      <div>
+        <b>${esc(t.service)}</b>
+        <small>${fmt(t.date)} · ${esc(t.time)} · ${esc(t.origin)} → ${esc(t.dest)}</small>
+        <small><span class="pill ${t.special?'special':''}">${t.special?'CANCINO':'GENERAL'}</span></small>
+      </div>
+      <button onclick="edit('${t.id}')">Editar</button>
+    </div>`).join('') || '<div class="empty">No hay registros.</div>';
+}
+function renderClosing(){
+  const m=String(document.getElementById('month').value).padStart(2,'0'),y=document.getElementById('year').value;
+  const arr=trips.filter(t=>t.date.startsWith(y+'-'+m));
+  const en=arr.filter(t=>t.type==='ENTRADA').length;
+  const sa=arr.filter(t=>t.type==='SALIDA').length;
+  const ca=arr.filter(t=>t.special).length;
+  document.getElementById('closingStats').innerHTML=
+    `<div class="stat"><span>TOTAL</span><b>${arr.length}</b></div>
+     <div class="stat"><span>ENTRADAS</span><b>${en}</b></div>
+     <div class="stat"><span>SALIDAS</span><b>${sa}</b></div>`;
+  const can=arr.filter(t=>t.special);
+  document.getElementById('cancinoList').innerHTML=can.map(t=>
+    `<div class="record"><div><b>${esc(t.service)}</b><small>${fmt(t.date)} · ${esc(t.time)}</small></div></div>`
+  ).join('') || '<div class="empty">No hay servicios CANCINO este mes.</div>';
+}
+function edit(id){
+  const t=trips.find(x=>x.id===id);if(!t)return;
+  editId=id;
+  document.getElementById('edate').value=t.date;
+  document.getElementById('etime').value=t.time;
+  document.getElementById('eservice').innerHTML=CATALOG.map((s,i)=>`<option value="${i}">${esc(s.label)}</option>`).join('');
+  document.getElementById('eservice').value=CATALOG.findIndex(s=>s.label===t.service);
+  document.getElementById('eobs').value=t.obs||'';
+  document.getElementById('editModal').classList.add('show');
+}
+function closeEdit(){document.getElementById('editModal').classList.remove('show')}
+function saveEdit(){
+  const t=trips.find(x=>x.id===editId),s=CATALOG[+document.getElementById('eservice').value];
+  if(!t||!s)return;
+  t.date=document.getElementById('edate').value||t.date;
+  t.time=document.getElementById('etime').value||t.time;
+  t.service=s.label;t.type=s.type;t.origin=s.origin;t.dest=s.dest;t.special=s.special;
+  t.obs=document.getElementById('eobs').value;
+  save();closeEdit();renderHome();renderRecords();renderClosing();
+}
+function removeEdit(){
+  if(confirm('¿Eliminar este registro?')){
+    trips=trips.filter(x=>x.id!==editId);save();closeEdit();renderHome();renderRecords();renderClosing();
+  }
+}
+function monthTrips(){
+  const m=String(document.getElementById('month').value).padStart(2,'0'),y=document.getElementById('year').value;
+  return trips.filter(t=>t.date.startsWith(y+'-'+m));
+}
+function xls(name,title,arr){
+  const h='<html><meta charset="UTF-8"><h2>'+title+'</h2><table border=1><tr>'+
+    arr[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>'+
+    arr.slice(1).map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+
+    '</table>';
+  const b=new Blob([h],{type:'application/vnd.ms-excel'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();
+}
+function exportGeneral(){
+  const a=monthTrips().filter(t=>!t.special);
+  const r=[['FECHA','SERVICIO','ORIGEN','DESTINO','TIPO','HORA','OBSERVACIÓN']];
+  a.forEach(t=>r.push([fmt(t.date),t.service,t.origin,t.dest,t.type,t.time,t.obs||'']));
+  xls('SERVICIOS_GENERALES.xls','SERVICIOS GENERALES',r);
+}
+function exportCancino(){
+  const a=monthTrips().filter(t=>t.special);
+  const r=[['FECHA','SERVICIO','ORIGEN','DESTINO','TIPO','HORA','OBSERVACIÓN']];
+  a.forEach(t=>r.push([fmt(t.date),t.service,t.origin,t.dest,t.type,t.time,t.obs||'']));
+  xls('SERVICIOS_ESPECIALES_CANCINO.xls','SERVICIOS ESPECIALES CANCINO',r);
+}
+function backup(){
+  const b=new Blob([JSON.stringify({version:6,exported:new Date().toISOString(),trips},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='BITACORA_RESPALDO.json';a.click();
+}
+function restore(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const x=JSON.parse(r.result);
+      if(!Array.isArray(x.trips))throw new Error();
+      trips=x.trips;save();renderHome();renderRecords();renderClosing();alert('Respaldo restaurado correctamente.');
+    }catch(err){alert('Archivo de respaldo no válido.')}
+  };
+  r.readAsText(f);
+}
+
+(function init(){
+  const d=new Date();
+  const months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('month').innerHTML=months.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  document.getElementById('month').value=d.getMonth()+1;
+  document.getElementById('year').value=d.getFullYear();
+  document.getElementById('eservice').innerHTML=CATALOG.map((s,i)=>`<option value="${i}">${esc(s.label)}</option>`).join('');
+  renderHome();
+  renderClosing();
+})();
+</script>
+</body>
+</html>
