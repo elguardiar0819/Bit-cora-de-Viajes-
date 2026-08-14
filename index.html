@@ -1,0 +1,88 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b2f6b"><link rel="manifest" href="manifest.webmanifest"><title>Bitácora Servicios</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:#0b2f6b;color:#fff;padding:18px 15px;position:sticky;top:0;z-index:5}h1{font-size:20px;margin:0}.small{font-size:12px;opacity:.85}
+main{max-width:780px;margin:auto;padding:12px 12px 96px}.card{background:#fff;border:1px solid #dce3ee;border-radius:14px;padding:14px;margin:10px 0}
+.tabs{display:flex;gap:7px;overflow:auto;margin:10px 0}.tabs button{white-space:nowrap}.active{background:#0b2f6b!important;color:#fff!important}
+button{border:0;border-radius:11px;padding:13px 14px;font-weight:800;font-size:15px;background:#e9eff7;color:#0b2f6b}.blue{background:#0b2f6b;color:#fff}.green{background:#159447;color:#fff}.orange{background:#f28c16;color:#fff}.red{background:#c62828;color:#fff}
+.notice{font-size:12px;background:#eef6ff;border:1px solid #cfe1fa;padding:10px;border-radius:10px;color:#214b82}
+.servicegrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.svc{text-align:left;background:#fff;border:1px solid #d6dfeb}.svc strong{display:block}.svc small{display:block;color:#69768a;margin-top:4px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.kpi{background:#fff;border:1px solid #dce3ee;border-radius:11px;padding:10px;text-align:center}.kpi b{font-size:21px;display:block}.kpi span{font-size:10px;color:#66748a}.table{overflow:auto;border:1px solid #dce3ee;border-radius:10px}
+table{width:100%;border-collapse:collapse;min-width:760px;background:#fff}th,td{padding:8px;border-bottom:1px solid #e4e9f0;font-size:12px;text-align:left}th{background:#eef3fa;color:#0b2f6b}
+.tag{border-radius:999px;padding:4px 7px;font-size:10px;font-weight:800}.can{background:#eee7ff;color:#5935a4}
+.field label{display:block;font-size:12px;color:#66748a;margin-bottom:5px}.field input,.field select{width:100%;padding:12px;border:1px solid #cfd8e5;border-radius:10px;background:#fff;font-size:16px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:20;align-items:flex-end}.modal.show{display:flex}.sheet{background:#fff;border-radius:18px 18px 0 0;width:100%;padding:15px;max-height:94vh;overflow:auto}
+footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #dce3ee;padding:8px;display:flex;gap:8px;z-index:6}footer button{flex:1}
+.big{width:100%;margin-top:8px}.toast{position:fixed;left:12px;right:12px;bottom:75px;background:#172033;color:#fff;padding:13px;border-radius:12px;display:none;z-index:30;text-align:center}
+@media(max-width:560px){.servicegrid,.grid{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+@media print{header,footer,.tabs,.no-print{display:none!important}body{background:#fff}.card{box-shadow:none}}
+</style></head><body>
+<header><h1>BITÁCORA SERVICIOS</h1><div class="small" id="today"></div></header>
+<main>
+<div class="tabs"><button class="active" onclick="tab('registro',this)">REGISTRO</button><button onclick="tab('cierre',this)">CIERRE</button><button onclick="tab('exportar',this)">EXPORTAR</button><button onclick="tab('catalogo',this)">CATÁLOGO</button></div>
+
+<section id="registro">
+<div class="card"><h2>¿Qué servicio realizó?</h2>
+<div class="notice"><b>Solo se registra lo que usted efectivamente hizo.</b> El catálogo proviene de sus bitácoras de julio y agosto. Toque el servicio y la app sella fecha y hora del momento.</div>
+<h3>ENTRADAS</h3><div class="servicegrid" id="entries"></div>
+<h3 style="margin-top:16px">SALIDAS</h3><div class="servicegrid" id="exits"></div></div>
+<div class="kpis" id="kpis"></div>
+<div class="card no-print"><div class="field"><label>Buscar</label><input id="search" placeholder="Fecha, servicio, origen o destino" oninput="render()"></div></div>
+<div class="card table"><table><thead><tr><th>Fecha</th><th>Servicio</th><th>Origen</th><th>Destino</th><th>Hora llegada</th><th>Especial</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+
+<section id="cierre" style="display:none">
+<div class="card"><h2>Cierre mensual</h2><div class="grid"><div class="field"><label>Mes</label><select id="month" onchange="summary()"></select></div><div class="field"><label>Año</label><input id="year" type="number" onchange="summary()"></div></div></div>
+<div class="kpis" id="sumKpis"></div>
+<div class="card"><h3>Servicios especiales CANCINO</h3><div class="table"><table><thead><tr><th>Fecha</th><th>Servicio</th><th>Hora llegada</th></tr></thead><tbody id="canRows"></tbody></table></div></div>
+<div class="card"><h3>Desglose por fecha</h3><div class="table"><table><thead><tr><th>Fecha</th><th>Total</th><th>Entradas</th><th>Salidas</th><th>Cancino</th></tr></thead><tbody id="dayRows"></tbody></table></div></div>
+</section>
+
+<section id="exportar" style="display:none"><div class="card"><h2>Exportar</h2><div class="notice">Solo se exportan servicios efectivamente registrados.</div>
+<button class="blue big" onclick="exportGeneral()">⬇ GENERAL — Excel</button><button class="green big" onclick="exportCancino()">⬇ CANCINO — Excel separado</button><button class="big" onclick="window.print()">🖨 Guardar / imprimir PDF</button><button class="big" onclick="backup()">💾 Respaldo completo</button><input class="big" type="file" accept=".json" onchange="restore(event)">
+</div></section>
+
+<section id="catalogo" style="display:none"><div class="card"><h2>Catálogo maestro</h2><div class="notice">Esta lista fue construida directamente de sus archivos <b>VIAJES DE JULIO</b> y <b>VIAJES DE AGOSTO</b>. No se crean registros por estar en el catálogo.</div>
+<div class="table"><table><thead><tr><th>Servicio</th><th>Origen</th><th>Destino</th><th>Tipo</th><th>Especial</th><th>Veces en julio+agosto</th></tr></thead><tbody id="catRows"></tbody></table></div></div></section>
+</main>
+
+<footer><button class="blue" onclick="tab('registro',document.querySelector('.tabs button'))">Registrar</button><button onclick="tab('cierre',document.querySelectorAll('.tabs button')[1])">Cierre</button><button onclick="tab('exportar',document.querySelectorAll('.tabs button')[2])">Exportar</button></footer>
+
+<div id="modal" class="modal"><div class="sheet"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Editar registro</h2><button onclick="closeModal()">Cerrar</button></div>
+<div class="grid"><div class="field"><label>Fecha</label><input id="edate" type="date"></div><div class="field"><label>Hora llegada</label><input id="etime" type="text" placeholder="08:44 AM"></div><div class="field"><label>Servicio</label><select id="eservice"></select></div><div class="field"><label>Observación</label><input id="eobs"></div></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button class="blue" style="flex:1" onclick="saveEdit()">Guardar</button><button class="red" onclick="removeEdit()">Eliminar</button></div></div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+const CATALOG=[{"label": "ENTRADA BOCA CHICA → ROCKWELL", "type": "ENTRADA", "origin": "BOCA CHICA", "dest": "ROCKWELL", "special": false, "historical_count": 38}, {"label": "ENTRADA CANCINO → ROCKWELL", "type": "ENTRADA", "origin": "CANCINO", "dest": "ROCKWELL", "special": true, "historical_count": 25}, {"label": "ENTRADA LABRADOR → ROCKWELL", "type": "ENTRADA", "origin": "LABRADOR", "dest": "ROCKWELL", "special": false, "historical_count": 1}, {"label": "SALIDA ROCKWELL → BACKUP", "type": "SALIDA", "origin": "ROCKWELL", "dest": "BACKUP", "special": false, "historical_count": 3}, {"label": "SALIDA ROCKWELL → BOCA CHICA", "type": "SALIDA", "origin": "ROCKWELL", "dest": "BOCA CHICA", "special": false, "historical_count": 33}, {"label": "SALIDA ROCKWELL → CANCINO", "type": "SALIDA", "origin": "ROCKWELL", "dest": "CANCINO", "special": true, "historical_count": 25}, {"label": "SALIDA ROCKWELL → JUAN BOSH-SAN VICENT", "type": "SALIDA", "origin": "ROCKWELL", "dest": "JUAN BOSH-SAN VICENT", "special": false, "historical_count": 1}, {"label": "SALIDA ROCKWELL", "type": "SALIDA", "origin": "ROCKWELL", "dest": "ROCKWELL", "special": false, "historical_count": 1}, {"label": "SALIDA ROCKWELL → SAN VICENTE", "type": "SALIDA", "origin": "ROCKWELL", "dest": "SAN VICENTE", "special": false, "historical_count": 1}];
+const KEY='BITACORA_SERVICIOS_V5';
+let trips=JSON.parse(localStorage.getItem(KEY)||'[]'),editId=null;
+function save(){localStorage.setItem(KEY,JSON.stringify(trips))}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])}
+function now(){let d=new Date();return{date:d.toISOString().slice(0,10),time:d.toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit',hour12:true})}}
+function fmt(d){let p=d.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d}
+function toast(x){let t=document.getElementById('toast');t.textContent=x;t.style.display='block';setTimeout(()=>t.style.display='none',1900)}
+function stamp(i){let s=CATALOG[i],n=now();trips.push({id:'T'+Date.now(),date:n.date,time:n.time,service:s.label,type:s.type,origin:s.origin,dest:s.dest,special:s.special,obs:''});save();render();summary();toast('✓ '+s.label+' · '+fmt(n.date)+' · '+n.time)}
+function build(){let ent=CATALOG.map((s,i)=>[s,i]).filter(x=>x[0].type==='ENTRADA'),ext=CATALOG.map((s,i)=>[s,i]).filter(x=>x[0].type==='SALIDA');
+document.getElementById('entries').innerHTML=ent.map(([s,i])=>`<button class=svc onclick=stamp(${i})><strong>${s.label}</strong><small>${s.origin} → ${s.dest}${s.special?' · ESPECIAL':''}</small></button>`).join('');
+document.getElementById('exits').innerHTML=ext.map(([s,i])=>`<button class=svc onclick=stamp(${i})><strong>${s.label}</strong><small>${s.origin} → ${s.dest}${s.special?' · ESPECIAL':''}</small></button>`).join('');
+document.getElementById('eservice').innerHTML=CATALOG.map((s,i)=>`<option value=${i}>${s.label}</option>`).join('');
+document.getElementById('catRows').innerHTML=CATALOG.map(s=>`<tr><td>${esc(s.label)}</td><td>${esc(s.origin)}</td><td>${esc(s.dest)}</td><td>${s.type}</td><td>${s.special?'CANCINO':'GENERAL'}</td><td>${s.historical_count}</td></tr>`).join('');
+let ms=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];document.getElementById('month').innerHTML=ms.map((x,i)=>`<option value=${i+1}>${x}</option>`).join('');let d=new Date();document.getElementById('month').value=d.getMonth()+1;document.getElementById('year').value=d.getFullYear();document.getElementById('today').textContent='Hoy: '+d.toLocaleDateString('es-DO')}
+function render(){let q=document.getElementById('search').value.toLowerCase(),a=trips.filter(t=>JSON.stringify(t).toLowerCase().includes(q)),en=a.filter(t=>t.type==='ENTRADA').length,sa=a.filter(t=>t.type==='SALIDA').length,ca=a.filter(t=>t.special).length;document.getElementById('kpis').innerHTML=`<div class=kpi><span>TOTAL</span><b>${a.length}</b></div><div class=kpi><span>ENTRADAS</span><b>${en}</b></div><div class=kpi><span>SALIDAS</span><b>${sa}</b></div><div class=kpi><span>CANCINO</span><b>${ca}</b></div>`;document.getElementById('rows').innerHTML=a.slice().reverse().map(t=>`<tr><td>${fmt(t.date)}</td><td>${esc(t.service)}</td><td>${esc(t.origin)}</td><td>${esc(t.dest)}</td><td>${esc(t.time)}</td><td>${t.special?'<span class=tag can>CANCINO</span>':'GENERAL'}</td><td><button onclick="edit('${t.id}')">Editar</button></td></tr>`).join('')||'<tr><td colspan=7>Sin registros.</td></tr>'}
+function monthTrips(){let m=String(document.getElementById('month').value).padStart(2,'0'),y=document.getElementById('year').value;return trips.filter(t=>t.date.startsWith(y+'-'+m))}
+function summary(){let a=monthTrips(),en=a.filter(t=>t.type==='ENTRADA').length,sa=a.filter(t=>t.type==='SALIDA').length,c=a.filter(t=>t.special).length,ci=a.filter(t=>t.special&&t.type==='ENTRADA').length,co=a.filter(t=>t.special&&t.type==='SALIDA').length;document.getElementById('sumKpis').innerHTML=`<div class=kpi><span>TOTAL</span><b>${a.length}</b></div><div class=kpi><span>ENTRADAS</span><b>${en}</b></div><div class=kpi><span>SALIDAS</span><b>${sa}</b></div><div class=kpi><span>CANCINO</span><b>${c}</b><small>Entrada ${ci} · Salida ${co}</small></div>`;let crows=a.filter(t=>t.special);document.getElementById('canRows').innerHTML=crows.map(t=>`<tr><td>${fmt(t.date)}</td><td>${esc(t.service)}</td><td>${esc(t.time)}</td></tr>`).join('')||'<tr><td colspan=3>Sin Cancino este mes.</td></tr>';let map={};a.forEach(t=>{map[t.date]??={n:0,e:0,s:0,c:0};map[t.date].n++;t.type==='ENTRADA'?map[t.date].e++:map[t.date].s++;if(t.special)map[t.date].c++});document.getElementById('dayRows').innerHTML=Object.keys(map).sort().map(d=>`<tr><td>${fmt(d)}</td><td>${map[d].n}</td><td>${map[d].e}</td><td>${map[d].s}</td><td>${map[d].c}</td></tr>`).join('')||'<tr><td colspan=5>Sin registros.</td></tr>'}
+function tab(id,b){['registro','cierre','exportar','catalogo'].forEach(x=>document.getElementById(x).style.display=x===id?'block':'none');document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');if(id==='cierre')summary()}
+function edit(id){editId=id;let t=trips.find(x=>x.id===id);document.getElementById('edate').value=t.date;document.getElementById('etime').value=t.time;document.getElementById('eservice').value=CATALOG.findIndex(s=>s.label===t.service);document.getElementById('eobs').value=t.obs||'';document.getElementById('modal').classList.add('show')}
+function closeModal(){document.getElementById('modal').classList.remove('show')}
+function saveEdit(){let t=trips.find(x=>x.id===editId),s=CATALOG[+document.getElementById('eservice').value];t.date=document.getElementById('edate').value;t.time=document.getElementById('etime').value||t.time;t.service=s.label;t.type=s.type;t.origin=s.origin;t.dest=s.dest;t.special=s.special;t.obs=document.getElementById('eobs').value;save();closeModal();render();summary();toast('✓ Registro actualizado')}
+function removeEdit(){if(confirm('¿Eliminar este registro?')){trips=trips.filter(x=>x.id!==editId);save();closeModal();render();summary();toast('Registro eliminado')}}
+function xls(name,title,arr){let h='<html><meta charset="UTF-8"><h2>'+title+'</h2><table border=1><tr>'+arr[0].map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr>'+arr.slice(1).map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</table>';let b=new Blob([h],{type:'application/vnd.ms-excel'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click()}
+function exportGeneral(){let a=monthTrips().filter(t=>!t.special),r=[['FECHA','SERVICIO','ORIGEN','DESTINO','TIPO','HORA LLEGADA','OBSERVACIÓN']];a.forEach(t=>r.push([fmt(t.date),t.service,t.origin,t.dest,t.type,t.time,t.obs||'']));xls('SERVICIOS_GENERALES.xls','SERVICIOS GENERALES',r)}
+function exportCancino(){let a=monthTrips().filter(t=>t.special),r=[['FECHA','SERVICIO','ORIGEN','DESTINO','TIPO','HORA LLEGADA','OBSERVACIÓN']];a.forEach(t=>r.push([fmt(t.date),t.service,t.origin,t.dest,t.type,t.time,t.obs||'']));xls('SERVICIOS_ESPECIALES_CANCINO.xls','SERVICIOS ESPECIALES CANCINO',r)}
+function backup(){let b=new Blob([JSON.stringify({version:5,exported:new Date().toISOString(),trips},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='BITACORA_RESPALDO.json';a.click()}
+function restore(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x.trips))throw 0;trips=x.trips;save();render();summary();toast('✓ Respaldo restaurado')}catch{alert('Archivo de respaldo no válido.')}};r.readAsText(f)}
+build();render();summary();if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
